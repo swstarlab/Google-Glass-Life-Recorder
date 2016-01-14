@@ -1,9 +1,8 @@
 # Google Glass Lifelog Recorder
 
-![Build status](https://api.travis-ci.org/fchollet/keras.svg)
+## Automatic Background Lifelog Recording Application
 
-## You have just found Keras.
-
+본 프로그램은 구글 글래스를 착용한 사용자의 시점을
 Keras is a minimalist, highly modular neural networks library, written in Python and capable of running on top of either [TensorFlow](https://github.com/tensorflow/tensorflow) or [Theano](https://github.com/Theano/Theano). It was developed with a focus on enabling fast experimentation. Being able to go from idea to result with the least possible delay is key to doing good research.
 
 Use Keras if you need a deep learning library that:

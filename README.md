@@ -2,163 +2,23 @@
 
 ## Automatic Background Lifelog Recording Application
 
-본 프로그램은 구글 글래스를 착용한 사용자의 시점을
-Keras is a minimalist, highly modular neural networks library, written in Python and capable of running on top of either [TensorFlow](https://github.com/tensorflow/tensorflow) or [Theano](https://github.com/Theano/Theano). It was developed with a focus on enabling fast experimentation. Being able to go from idea to result with the least possible delay is key to doing good research.
+본 프로그램은 구글 글래스를 착용한 사용자의 시점을 24시간 녹화할 수 있게 백그라운드에서 비디오 레코딩 서비스를 수행하는 프로그램이다.
 
-Use Keras if you need a deep learning library that:
+이를 위해서 배터리 소모와 발열을 최소화하기 위한 여러가지 테크닉이 사용되었으며, 비디오 래코딩 이외에 스냅샷 모드, 오디오 래코딩 모드, 비디오 분할 녹화 기능 등이 구현되어있다.
 
-- allows for easy and fast prototyping (through total modularity, minimalism, and extensibility).
-- supports both convolutional networks and recurrent networks, as well as combinations of the two.
-- supports arbitrary connectivity schemes (including multi-input and multi-output training).
-- runs seamlessly on CPU and GPU.
+본 프로그램은 Google Android 운영체제에서 동작하며, 최신 버전의 구글 글래스 장비에서만 테스트 되었다.
 
-Read the documentation at [Keras.io](http://keras.io).
+주요 기능은 다음과 같다.
 
-Keras is compatible with: __Python 2.7-3.5__.
+- 백그라운드 서비스: 구글 글래스에서 제공되는 기본 녹화 앱은 항상 화면에 래코딩화면이 뜬 상태에서만 녹화가 수행된다. 따라서 이를 실행한 상태로 실생활을 할 경우, 눈이 부시며 발열이 심하고, 베터리소모가 매우 큰 단점이 있다. 따라서 이를 해결하기 위해 서비스에서 래코딩이 수행 가능하도록 수정하였고, surface view 를 키지 않아도 래코딩이 되도록 수정하였다.
+- 스냅 샷 모드: 동영상을 계속해서 래코딩 하는 것은 구글 글래스의 기본 용량이 매우 작다는 제한 때문에 비효율 적인 경우가 있다. 따라서 지정된 시간 간격 단위로 현재 카메라가 보는 시점을 캡쳐하여 스냅 샷 방식으로 기록을 하는 모드가 구현되어 있다.
+- 오디오 래코딩 모드: 마찬가지로 오디오 정보만을 계속 녹화해서 사용해야할 필요성 또한 있어, 이를 구현하였다.
+- 실시간 동영상 리스트 업데이트: 구글 글래스로 녹화한 동영상을 외장하드 등의 외부 메모리로 옮기기 위해서는 실시간으로 촬영된 동영상의 파일 정보가 업데이트 되어야 한다. 따라서 동영상 녹화가 종료될 때마다 파일 리스트를 갱신하도록 하는 기능이 구현되어있다.
+- 용량 최적화: 동영상을 최적의 상태로 녹화할 수 있도록 커스텀 비디오 코덱과 오디오 코덱을 사용하여 녹화하도록 구현되어있다.
+- 비디오 분활 녹화 기능: 구글 글래스의 배터리가 다 떨어지거나, 갑작스런 프로그램 충돌로 녹화중이던 비디오의 정보가 손실되는 경우를 대비하여, 5분 단위로 동영상을 끊어서 분활 녹화하는 기능을 구현하였다.
 
+This application is compatible with: Google Glass 2
 
-------------------
-
-
-## Guiding principles
-
-- __Modularity.__ A model is understood as a sequence or a graph of standalone, fully-configurable modules that can be plugged together with as little restrictions as possible. In particular, neural layers, cost functions, optimizers, initialization schemes, activation functions, regularization schemes are all standalone modules that you can combine to create new models.
-
-- __Minimalism.__ Each module should be kept short and simple. Every piece of code should be transparent upon first reading. No black magic: it hurts iteration speed and ability to innovate.
-
-- __Easy extensibility.__ New modules are dead simple to add (as new classes and functions), and existing modules provide ample examples. To be able to easily create new modules allows for total expressiveness, making Keras suitable for advanced research.
-
-- __Work with Python__. No separate models configuration files in a declarative format. Models are described in Python code, which is compact, easier to debug, and allows for ease of extensibility.
-
-
-------------------
-
-
-## Getting started: 30 seconds to Keras
-
-The core data structure of Keras is a __model__, a way to organize layers. There are two types of models: [`Sequential`](http://keras.io/models/#sequential) and [`Graph`](http://keras.io/models/#graph).
-
-Here's the `Sequential` model (a linear pile of layers):
-
-```python
-from keras.models import Sequential
-
-model = Sequential()
-```
-
-Stacking layers is as easy as `.add()`:
-
-```python
-from keras.layers.core import Dense, Activation
-
-model.add(Dense(output_dim=64, input_dim=100, init="glorot_uniform"))
-model.add(Activation("relu"))
-model.add(Dense(output_dim=10, init="glorot_uniform"))
-model.add(Activation("softmax"))
-```
-
-Once your model looks good, configure its learning process with `.compile()`:
-```python
-model.compile(loss='categorical_crossentropy', optimizer='sgd')
-```
-
-If you need to, you can further configure your optimizer. A core principle of Keras is to make things reasonably simple, while allowing the user to be fully in control when they need to (the ultimate control being the easy extensibility of the source code).
-```python
-from keras.optimizers import SGD
-model.compile(loss='categorical_crossentropy', optimizer=SGD(lr=0.01, momentum=0.9, nesterov=True))
-```
-
-You can now iterate on your training data in batches:
-```python
-model.fit(X_train, Y_train, nb_epoch=5, batch_size=32)
-```
-
-Alternatively, you can feed batches to your model manually:
-```python
-model.train_on_batch(X_batch, Y_batch)
-```
-
-Evaluate your performance in one line:
-```python
-objective_score = model.evaluate(X_test, Y_test, batch_size=32)
-```
-
-Or generate predictions on new data:
-```python
-classes = model.predict_classes(X_test, batch_size=32)
-proba = model.predict_proba(X_test, batch_size=32)
-```
-
-Building a network of LSTMs, a deep CNN, a Neural Turing Machine, a word2vec embedder or any other model is just as fast. The ideas behind deep learning are simple, so why should their implementation be painful?
-
-Have a look at these [starter examples](http://keras.io/examples/).
-
-In the [examples folder](https://github.com/fchollet/keras/tree/master/examples) of the repo, you will find more advanced models: question-answering with memory networks, text generation with stacked LSTMs, neural turing machines, etc.
-
-
-------------------
-
-
-## Installation
-
-Keras uses the following dependencies:
-
-- numpy, scipy
-- pyyaml
-- HDF5 and h5py (optional, required if you use model saving/loading functions)
-- Optional but recommended if you use CNNs: cuDNN.
-
-*When using the Theano backend:*
-
-- Theano
-    - [See installation instructions](http://deeplearning.net/software/theano/install.html#install).
-
-**Note**: You should use the latest version of Theano, not the PyPI version. Install it with:
-```
-sudo pip install git+git://github.com/Theano/Theano.git
-```
-
-*When using the TensorFlow backend:*
-
-- TensorFlow
-    - [See installation instructions](https://github.com/tensorflow/tensorflow#download-and-setup).
-
-To install Keras, `cd` to the Keras folder and run the install command:
-```
-sudo python setup.py install
-```
-
-You can also install Keras from PyPI:
-```
-sudo pip install keras
-```
-
-------------------
-
-
-## Switching from Theano to TensorFlow
-
-By default, Keras will use Theano as its tensor manipulation library. [Follow these instructions](http://keras.io/backend/) to configure the Keras backend.
-
-------------------
-
-
-## Support
-
-You can ask questions and join the development discussion on the [Keras Google group](https://groups.google.com/forum/#!forum/keras-users).
-
-You can also post bug reports and feature requests in [Github issues](https://github.com/fchollet/keras/issues). Make sure to read [our guidelines](https://github.com/fchollet/keras/blob/master/CONTRIBUTING.md) first.
-
-
-------------------
-
-
-## Why this name, Keras?
-
-Keras (κέρας) means _horn_ in Greek. It is a reference to a literary image from ancient Greek and Latin literature, first found in the _Odyssey_, where dream spirits (_Oneiroi_, singular _Oneiros_) are divided between those who deceive men with false visions, who arrive to Earth through a gate of ivory, and those who announce a future that will come to pass, who arrive through a gate of horn. It's a play on the words κέρας (horn) / κραίνω (fulfill), and ἐλέφας (ivory) / ἐλεφαίρομαι (deceive).
-
-Keras was initially developed as part of the research effort of project ONEIROS (Open-ended Neuro-Electronic Intelligent Robot Operating System).
-
->_"Oneiroi are beyond our unravelling --who can be sure what tale they tell? Not all that men look for comes to pass. Two gates there are that give passage to fleeting Oneiroi; one is made of horn, one of ivory. The Oneiroi that pass through sawn ivory are deceitful, bearing a message that will not be fulfilled; those that come out through polished horn have truth behind them, to be accomplished for men who see them."_ Homer, Odyssey 19. 562 ff (Shewring translation).
-
+- 사용 방법: 본 프로그램을 구글 글래스에 이클립스를 이용해 설치 한 후, 앱 버튼을 터치해서 실행 시킨다. 또한 터치를 할 때마다, 녹화의 실행과 종료가 조작된다.
+ 
 ------------------
